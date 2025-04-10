@@ -68,3 +68,22 @@ filezilla功能
 
 winscp功能
 ![QQ_1744284044686](https://github.com/user-attachments/assets/8812ca9e-5064-4fed-aad1-88f76c3b570c)
+
+
+## 工具参考
+>  感谢下面各位的开源精神
+> 
+>  https://github.com/doki-byte/read_sun_todesk
+> 
+>  https://github.com/lele8/SharpDBeaver
+> 
+>  https://github.com/AabyssZG/NavicatPwn
+>
+>  https://github.com/RowTeam/SharpDecryptPwd
+> 
+>  https://github.com/sf197/GetPwd
+> 
+>  https://github.com/ShuYeJang/ToDeskSunDump
+> 
+>  https://github.com/Naturehi666/searchall
+> 
