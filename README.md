@@ -30,6 +30,10 @@
 >   e0e1-config -all -output "result.txt"   #执行所有功能，并将输出 输入到result.txt文件中
 > 
 
+## 微步沙盒分析
+![QQ_1744285073224](https://github.com/user-attachments/assets/25b167aa-193b-417b-b393-7887806114f1)
+
+
 ## 效果展示
 
 敏感信息文件搜集功能
