@@ -41,10 +41,10 @@ func main() {
 	winscpFlag := flag.Bool("winscp", false, "获取WinSCP的连接信息")
 	winscpPath := flag.String("winscp-path", "", "自定义指定WinSCP的配置文件路径")
 
-	bromiumFlag := flag.String("bromium", "all", "指定要扫描的浏览器内核类型 (all, chromium, firefox)")
+	bromiumFlag := flag.String("bromium", "", "指定要扫描的浏览器内核类型 (all, chromium, firefox)")
 	browersName := flag.String("browser-name", "", "指定浏览器名称")
 	browersPath := flag.String("browser-path", "", "指定浏览器数据路径")
-	browersFormat := flag.String("browser-format", "json", "输出格式 (csv 或 json)，默认只输出到控制台")
+	browersFormat := flag.String("browser-format", "", "输出格式 (csv 或 json)，默认只输出到控制台")
 	browersOutDir := flag.String("browser-outdir", "out", "指定浏览器数据保存目录")
 	browserFileLimit := flag.String("browers-limit", "2000", "指定读取的数据行数，默认2000个数据")
 
