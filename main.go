@@ -1,6 +1,7 @@
 package main
 
 import (
+	"e0e1-config/pkg/browers"
 	"e0e1-config/pkg/dbeaver"
 	"e0e1-config/pkg/filezilla"
 	"e0e1-config/pkg/finalshell"
@@ -40,6 +41,13 @@ func main() {
 	winscpFlag := flag.Bool("winscp", false, "获取WinSCP的连接信息")
 	winscpPath := flag.String("winscp-path", "", "自定义指定WinSCP的配置文件路径")
 
+	bromiumFlag := flag.String("bromium", "all", "指定要扫描的浏览器内核类型 (all, chromium, firefox)")
+	browersName := flag.String("browser-name", "", "指定浏览器名称")
+	browersPath := flag.String("browser-path", "", "指定浏览器数据路径")
+	browersFormat := flag.String("browser-format", "json", "输出格式 (csv 或 json)，默认只输出到控制台")
+	browersOutDir := flag.String("browser-outdir", "out", "指定浏览器数据保存目录")
+	browserFileLimit := flag.String("browers-limit", "2000", "指定读取的数据行数，默认2000个数据")
+
 	searchFlag := flag.Bool("search", false, "搜索敏感配置信息")
 	searchPath := flag.String("search-path", ".", "指定搜索路径")
 	searchRegex := flag.String("search-regex", "", "自定义正则表达式，多个表达式用逗号分隔")
@@ -50,14 +58,15 @@ func main() {
 	searchCharLimit := flag.Int("search-char-limit", 1000, "匹配行字符数限制")
 
 	allFlag := flag.Bool("all", false, "执行所有功能")
-	outputFile := flag.String("output", "", "输出结果到指定文件")
+	outputFile := flag.String("output", "rest.txt", "输出结果到指定文件")
 	helpFlag := flag.Bool("help", false, "显示帮助信息")
 	flag.Parse()
 
 	if *helpFlag || (!*notepadFlag && !*sunloginFlag && !*todeskFlag && !*dbeaverFlag && !*finalshellFlag &&
 		!*navicatReg && *navicatNcxFile == "" && !*xshellFlag && !*xftpFlag && !*filezillaFlag && !*winscpFlag &&
-		!*searchFlag && !*allFlag && *dbeaverConfig == "" && *dbeaverSources == "" && *finalshellPath == "" &&
-		*xshellPath == "" && *xftpPath == "" && *filezillaPath == "" && *winscpPath == "") {
+		!*searchFlag && !*allFlag && *dbeaverConfig == "" && *dbeaverSources == "" &&
+		*finalshellPath == "" && *xshellPath == "" && *xftpPath == "" && *filezillaPath == "" && *winscpPath == "" &&
+		*bromiumFlag == "" && *browersName == "" && *browersPath == "") {
 		help.ShowHelp()
 		return
 	}
@@ -205,6 +214,70 @@ func main() {
 			resultBuilder.WriteString("\n")
 		}
 	}
+
+	// 添加Chromium处理逻辑
+	if (*bromiumFlag == "all" || *bromiumFlag == "chromium" || *bromiumFlag == "firefox") || *allFlag || (*browersName != "" && *browersPath != "") {
+		browers.SetFormat(*browersFormat)
+		browers.SetOutputDir(*browersOutDir)
+		browers.SetLimit(*browserFileLimit)
+
+		if *allFlag {
+			*bromiumFlag = "all"
+		}
+		var chromiumResult string
+		var chromiumOutput string
+		var FireOutput string
+
+		if *browersName == "firefox" && *browersPath != "" {
+
+		} else if *browersName != "" && *browersPath != "" {
+			// 使用指定的浏览器和路径
+			chromiumOutput, err := browers.SpecifyPath(*browersName, *browersPath)
+			if err != nil {
+				fmt.Printf("Chromium浏览器扫描失败: %v\n", err)
+			} else {
+				chromiumResult = chromiumOutput
+				if *browersFormat != "" {
+					chromiumResult += fmt.Sprintf("已处理 %s 浏览器数据，结果保存在 %s 目录\n", *browersName, *browersOutDir)
+				}
+			}
+		} else {
+			// 根据bromiumFlag参数选择扫描方式
+			switch *bromiumFlag {
+			case "all":
+				chromiumOutput = browers.ChromiumKernel()
+				FireOutput, _ = browers.GetFirefox()
+				if *browersFormat != "" {
+					chromiumOutput += fmt.Sprintf("已处理所有支持的浏览器数据，结果保存在 %s 目录\n", *browersOutDir)
+				}
+			case "chromium":
+				chromiumOutput = browers.ChromiumKernel()
+				if *browersFormat != "" {
+					chromiumOutput += fmt.Sprintf("已处理所有Chromium内核浏览器数据，结果保存在 %s 目录\n", *browersOutDir)
+				}
+			case "firefox":
+				FireOutput, _ = browers.GetFirefox()
+				if *browersFormat != "" {
+					FireOutput += fmt.Sprintf("已处理所有Firefox浏览器数据，结果保存在 %s 目录\n", *browersOutDir)
+				}
+			}
+			chromiumResult = chromiumOutput
+		}
+
+		if chromiumResult != "" && *browersFormat == "" {
+			resultBuilder.WriteString("===== Chromium浏览器信息 =====\n")
+			resultBuilder.WriteString(chromiumResult)
+			resultBuilder.WriteString("\n")
+		}
+
+		if FireOutput != "" && *browersFormat == "" {
+			resultBuilder.WriteString("===== Firefox浏览器信息 =====\n")
+			resultBuilder.WriteString(chromiumResult)
+			resultBuilder.WriteString("\n")
+		}
+	}
+
+	// 删除重复的搜索功能执行代码块
 
 	result := resultBuilder.String()
 

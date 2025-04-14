@@ -9,7 +9,7 @@ func ShowHelp() {
   / _ \ | | |/ _ \ |_____ / __/ _ \| '_ \| |_| |/ _  |
  |  __/ |_| |  __/ |_____| (_| (_) | | | |  _| | (_| |
   \___|\___/ \___|_|      \___\___/|_| |_|_| |_|\__, |
-		e0e1-config - 配置扫描利用工具 - version: 1.0
+		e0e1-config - 配置扫描利用工具 - version: 1.20
      github: https://github.com/eeeeeeeeee-code/e0e1-config
 
 用法:
@@ -44,6 +44,13 @@ func ShowHelp() {
 	winscp:
 		-winscp                 获取WinSCP的连接信息(1.注册表获取 2.寻找默认配置文件)
 		-winscp-path string     自定义指定WinSCP的配置文件路径
+	浏览器:
+		-bromium				指定要扫描的浏览器内核类型 (all, chromium, firefox)
+		-browser-name			QQ等，需要联结browser-path参数
+		-browser-path			指定浏览器数据路径，需要联结browser-name参数
+		-browser-format			指定输出格式 (csv 或 json)，为空只输出到控制台
+		-browser-outdir			指定浏览器数据保存目录，默认out目录，需要-browser-format为csv或者json时输出
+		-browers-limit			指定读取的数据行数，默认2000行数据，避免数据过多
 	search:
 		-search					搜索敏感配置信息
 		-search-path 			指定搜索路径(默认当前目录)
@@ -63,6 +70,8 @@ func ShowHelp() {
   e0e1-config -winscp -winscp-path "C:\path\winscp.ini"
   e0e1-config -all
   e0e1-config -all -output "result.txt"
+  e0e1-config -bromium all -output "result.txt"
+  e0e1-config -all -browser-format csv -output "result.txt" 
 `
 	fmt.Println(helpText)
 }
