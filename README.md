@@ -51,6 +51,10 @@ e0e1-config 1.20版本更新内容
 
 
 ## 效果展示
+浏览器信息获取
+![image](https://github.com/user-attachments/assets/5969b2df-cd24-45fa-9971-f71a629d70b1)
+![image](https://github.com/user-attachments/assets/ef190458-1cd6-4265-93dc-dce40571f018)
+
 
 敏感信息文件搜集功能
 ![QQ_1744284336027](https://github.com/user-attachments/assets/5f87126e-6ec6-428d-9c85-f158edee5f5a)
