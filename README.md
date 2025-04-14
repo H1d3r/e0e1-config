@@ -102,4 +102,7 @@ winscp功能
 >  https://github.com/ShuYeJang/ToDeskSunDump
 > 
 >  https://github.com/Naturehi666/searchall
-> 
+>
+>  https://github.com/StarfireLab/SharpWeb
+>
+>  https://github.com/moonD4rk/HackBrowserData
