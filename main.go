@@ -58,7 +58,7 @@ func main() {
 	searchCharLimit := flag.Int("search-char-limit", 1000, "匹配行字符数限制")
 
 	allFlag := flag.Bool("all", false, "执行所有功能")
-	outputFile := flag.String("output", "rest.txt", "输出结果到指定文件")
+	outputFile := flag.String("output", "", "输出结果到指定文件")
 	helpFlag := flag.Bool("help", false, "显示帮助信息")
 	flag.Parse()
 
