@@ -2,7 +2,7 @@
 
 ## 功能简介
   该工具主要用于后渗透方面，包含：
-  1. firefox和chromium内核浏览器，提取浏览记录、下载记录、书签、cookie、用户密码
+  1. firefox、ie和chromium内核浏览器，提取浏览记录、下载记录、书签、cookie、用户密码
   2. Windows记事本和Notepad++ 保存与未保存内容提取
   3. 向日葵（支持最新版本）  获取id、密码、配置信息
   4. ToDesk  获取id、密码、配置信息
@@ -15,11 +15,20 @@
   11. 敏感信息文件搜索
 
 ## 版本更新
-e0e1-config 1.20版本更新内容
+2025.4.20-1.30版本更新内容
+  1. 首先将go版本从1.2.13回退到1.2.0，不然就不支持windows低版本了，这个是测试ie浏览器的时候发现的问题
+     
+  2. ie浏览器内容解密
+    获取ie浏览器 登录凭据、书签、浏览记录
+
+  3. 他是默认是直接输出到控制台的，但是测试的时候没注意将output填入了默认。
+     
+
+2025.4.14-1.20版本更新内容
   1. firefox浏览器内容解密
 
       获取firef5ox浏览器 浏览记录、下载记录、书签、cookie、用户密码
-  3. chromium内核浏览器内容解密
+  2. chromium内核浏览器内容解密
 
       获取chromium内核浏览器 浏览记录、下载记录、书签、cookie、用户密码
     默认检测Chrome、Chrome Beta、Chromium、Edge、360 Speed、360 Speed X、Brave、QQ、Opera、OperaGX、Vivaldi、CocCoc、Yandex、DCBrowser、Old Sogou、New Sogou等多种浏览器
