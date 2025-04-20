@@ -244,6 +244,7 @@ func main() {
 			case "all":
 				chromiumOutput = browers.ChromiumKernel()
 				FireOutput, _ = browers.GetFirefox()
+				IEOutput, _ = browers.GetIE()
 				if *browersFormat != "" {
 					chromiumOutput += fmt.Sprintf("已处理所有支持的浏览器数据，结果保存在 %s 目录\n", *browersOutDir)
 				}
