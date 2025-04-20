@@ -41,7 +41,7 @@ func main() {
 	winscpFlag := flag.Bool("winscp", false, "获取WinSCP的连接信息")
 	winscpPath := flag.String("winscp-path", "", "自定义指定WinSCP的配置文件路径")
 
-	bromiumFlag := flag.String("bromium", "", "指定要扫描的浏览器内核类型 (all, chromium, firefox)")
+	bromiumFlag := flag.String("bromium", "", "指定要扫描的浏览器内核类型 (all, chromium, firefox,ie)")
 	browersName := flag.String("browser-name", "", "指定浏览器名称")
 	browersPath := flag.String("browser-path", "", "指定浏览器数据路径")
 	browersFormat := flag.String("browser-format", "", "输出格式 (csv 或 json)，默认只输出到控制台")
@@ -227,11 +227,9 @@ func main() {
 		var chromiumResult string
 		var chromiumOutput string
 		var FireOutput string
+		var IEOutput string
 
-		if *browersName == "firefox" && *browersPath != "" {
-
-		} else if *browersName != "" && *browersPath != "" {
-			// 使用指定的浏览器和路径
+		if *browersName != "" && *browersPath != "" {
 			chromiumOutput, err := browers.SpecifyPath(*browersName, *browersPath)
 			if err != nil {
 				fmt.Printf("Chromium浏览器扫描失败: %v\n", err)
@@ -242,7 +240,6 @@ func main() {
 				}
 			}
 		} else {
-			// 根据bromiumFlag参数选择扫描方式
 			switch *bromiumFlag {
 			case "all":
 				chromiumOutput = browers.ChromiumKernel()
@@ -260,18 +257,28 @@ func main() {
 				if *browersFormat != "" {
 					FireOutput += fmt.Sprintf("已处理所有Firefox浏览器数据，结果保存在 %s 目录\n", *browersOutDir)
 				}
+			case "ie":
+				IEOutput, _ = browers.GetIE()
+				if *browersFormat != "" {
+					IEOutput += fmt.Sprintf("已处理所有IE浏览器数据，结果保存在 %s 目录\n", *browersOutDir)
+				}
 			}
 			chromiumResult = chromiumOutput
 		}
 
-		if chromiumResult != "" && *browersFormat == "" {
+		if chromiumResult != "" && *browersFormat == "" && *outputFile != "" {
 			resultBuilder.WriteString("===== Chromium浏览器信息 =====\n")
 			resultBuilder.WriteString(chromiumResult)
 			resultBuilder.WriteString("\n")
 		}
 
-		if FireOutput != "" && *browersFormat == "" {
+		if FireOutput != "" && *browersFormat == "" && *outputFile != "" {
 			resultBuilder.WriteString("===== Firefox浏览器信息 =====\n")
+			resultBuilder.WriteString(chromiumResult)
+			resultBuilder.WriteString("\n")
+		}
+		if FireOutput != "" && *browersFormat == "" && *outputFile != "" {
+			resultBuilder.WriteString("===== IE浏览器信息 =====\n")
 			resultBuilder.WriteString(chromiumResult)
 			resultBuilder.WriteString("\n")
 		}

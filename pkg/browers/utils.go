@@ -11,24 +11,18 @@ import (
 	"time"
 )
 
-// BrowserName 存储当前浏览器名称
 var BrowserName string
 
-// browlimit 读取数据行数
 var browerlimit string
 
-// SystemKey 存储系统密钥
 var SystemKey []byte
 
-// Format 存储输出格式
 var Format string
 
 var PrintOut = true
 
-// OutputDir 存储输出目录
 var OutputDir = "out"
 
-// SetFormat 设置输出格式
 func SetFormat(format string) {
 	Format = format
 	if Format != "" {
@@ -36,7 +30,6 @@ func SetFormat(format string) {
 	}
 }
 
-// SetOutputDir 设置输出目录
 func SetOutputDir(dir string) {
 	OutputDir = dir
 }
@@ -45,11 +38,8 @@ func SetLimit(limit string) {
 	browerlimit = limit
 }
 
-// TimeEpoch 将Chrome时间戳转换为时间
 func TimeEpoch(timestamp int64) time.Time {
-	// Chrome时间戳是从1601年1月1日开始的微秒数
-	// 需要转换为Unix时间戳（从1970年1月1日开始的秒数）
-	// 差值为11644473600秒
+
 	windowsEpochOffset := int64(11644473600 * 1000000)
 	unixMicro := timestamp - windowsEpochOffset
 	if unixMicro < 0 {
@@ -58,7 +48,6 @@ func TimeEpoch(timestamp int64) time.Time {
 	return time.Unix(0, unixMicro*1000)
 }
 
-// CreateTmpFile 创建临时文件
 func CreateTmpFile(srcPath string) (string, error) {
 	tmpFile, err := ioutil.TempFile("", "brower_*")
 	if err != nil {
@@ -80,13 +69,11 @@ func CreateTmpFile(srcPath string) (string, error) {
 
 func RemoveFile(strPath string) error {
 	if _, err := os.Stat(strPath); os.IsNotExist(err) {
-		return nil // 文件不存在就无需删除
+		return nil
 	}
 	return os.Remove(strPath)
 }
 
-// FileExists 检查文件是否存在
-// 返回存在的文件路径列表
 func FileExists(paths []string) []string {
 	existingPaths := []string{}
 	for _, path := range paths {
@@ -97,15 +84,13 @@ func FileExists(paths []string) []string {
 	return existingPaths
 }
 
-// PathExists 检查单个路径是否存在
 func PathExists(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil
 }
 
-// WriteCSV 写入CSV文件
 func WriteCSV(header []string, data [][]string, fileName string) error {
-	// 确保输出目录存在
+
 	outDir := filepath.Dir(fileName)
 	if err := os.MkdirAll(outDir, 0755); err != nil {
 		return err
@@ -133,9 +118,8 @@ func WriteCSV(header []string, data [][]string, fileName string) error {
 	return nil
 }
 
-// WriteJSON 写入JSON文件
 func WriteJSON(header []string, data [][]string, fileName string) error {
-	// 确保输出目录存在
+
 	outDir := filepath.Dir(fileName)
 	if err := os.MkdirAll(outDir, 0755); err != nil {
 		return err
@@ -160,7 +144,6 @@ func WriteJSON(header []string, data [][]string, fileName string) error {
 	return ioutil.WriteFile(fileName+".json", jsonBytes, 0644)
 }
 
-// 打印函数
 func PrintNormal(message string) {
 	if PrintOut {
 		fmt.Println(message)
@@ -185,7 +168,6 @@ func PrintVerbose(message string) {
 	fmt.Printf("[*] %s\n", message)
 }
 
-// IsTrueFalse 布尔值转换
 func IsTrueFalse(value string) string {
 	if value == "1" {
 		return "true"
@@ -193,7 +175,6 @@ func IsTrueFalse(value string) string {
 	return "false"
 }
 
-// TryParseSameSite 解析SameSite值
 func TryParseSameSite(value string) string {
 	switch value {
 	case "0":
@@ -207,9 +188,8 @@ func TryParseSameSite(value string) string {
 	}
 }
 
-// IsHighIntegrity 检查是否有管理员权限
 func IsHighIntegrity() bool {
-	// 在Go中检查管理员权限的简化实现
+
 	file, err := os.Open(`C:\Windows\System32\config\system`)
 
 	if err == nil {
@@ -222,7 +202,6 @@ func IsHighIntegrity() bool {
 	return false
 }
 
-// CopyFile 复制文件
 func CopyFile(src, dst string) error {
 	sourceFile, err := ioutil.ReadFile(src)
 	if err != nil {

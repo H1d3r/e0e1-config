@@ -21,38 +21,31 @@ import (
 	"unsafe"
 )
 
-// AesGcm 实现AES-GCM解密
 type AesGcm struct{}
 
-// Decrypt 解密AES-GCM加密的数据
 func (a *AesGcm) Decrypt(key, iv, aad, cipherText, authTag []byte) ([]byte, error) {
 	if len(key) != 16 && len(key) != 24 && len(key) != 32 {
 		return nil, errors.New("invalid key size")
 	}
 
-	// 创建AES密码块
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
 	}
 
-	// 创建GCM模式
 	aesGCM, err := cipher.NewGCM(block)
 	if err != nil {
 		return nil, err
 	}
 
-	// 在Go中，GCM的nonce通常是12字节
 	if len(iv) != 12 {
 		return nil, errors.New("invalid IV size, expected 12 bytes")
 	}
 
-	// 在Go中，authTag通常附加在cipherText后面
 	combinedData := make([]byte, len(cipherText)+len(authTag))
 	copy(combinedData, cipherText)
 	copy(combinedData[len(cipherText):], authTag)
 
-	// 解密
 	plaintext, err := aesGCM.Open(nil, iv, combinedData, aad)
 	if err != nil {
 		return nil, err
@@ -61,7 +54,6 @@ func (a *AesGcm) Decrypt(key, iv, aad, cipherText, authTag []byte) ([]byte, erro
 	return plaintext, nil
 }
 
-// GetMasterKey 从Chrome的Local State文件中提取主密钥
 func GetMasterKey(filePath string) ([]byte, error) {
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
 		return nil, errors.New("file does not exist")
@@ -72,7 +64,6 @@ func GetMasterKey(filePath string) ([]byte, error) {
 		return nil, err
 	}
 
-	// 尝试多种正则表达式模式匹配
 	patterns := []string{
 		`"encrypted_key":"(.*?)"`,
 		`"encrypted_key"\s*:\s*"([^"]+)"`,
@@ -86,9 +77,9 @@ func GetMasterKey(filePath string) ([]byte, error) {
 		if len(matches) > 1 {
 			masterKey, err = base64.StdEncoding.DecodeString(matches[1])
 			if err == nil && len(masterKey) > 5 {
-				// 去除前缀 "DPAPI"
+
 				masterKey = masterKey[5:]
-				// 尝试解密
+
 				decryptedKey, err := decryptDPAPI(masterKey)
 				if err == nil {
 					return decryptedKey, nil
@@ -100,45 +91,40 @@ func GetMasterKey(filePath string) ([]byte, error) {
 	return nil, errors.New("encrypted key not found in state file")
 }
 
-// 添加Windows API相关常量
 const (
 	CRYPTPROTECT_UI_FORBIDDEN  = 0x1
 	CRYPTPROTECT_LOCAL_MACHINE = 0x4
 )
 
-// DecryptWithSystemDPAPI 使用系统DPAPI解密Chrome状态文件中的密钥
 func DecryptWithSystemDPAPI(stateFilePath string) ([]byte, error) {
-	// 读取状态文件
+
 	stateData, err := ioutil.ReadFile(stateFilePath)
 	if err != nil {
 		return nil, err
 	}
 
-	// 尝试多种正则表达式模式匹配
 	patterns := []string{
 		`"os_crypt"[\s\S]*?"encrypted_key"\s*:\s*"([^"]+)"`,
 		`"encrypted_key":"([^"]+)"`,
 		`"encrypted_key"\s*:\s*"([^"]+)"`,
 	}
 
-	// 首先尝试获取app_bound_encrypted_key
 	appBoundPatterns := []string{
 		`"os_crypt"[\s\S]*?"app_bound_encrypted_key"\s*:\s*"([^"]+)"`,
 		`"app_bound_encrypted_key":"([^"]+)"`,
 		`"app_bound_encrypted_key"\s*:\s*"([^"]+)"`,
 	}
 
-	// 尝试app_bound_encrypted_key
 	for _, pattern := range appBoundPatterns {
 		re := regexp.MustCompile(pattern)
 		matches := re.FindStringSubmatch(string(stateData))
 		if len(matches) > 1 {
 			encryptedKey, err := base64.StdEncoding.DecodeString(matches[1])
 			if err == nil && len(encryptedKey) > 4 {
-				// 检查并移除 "APPB" 前缀
+
 				if encryptedKey[0] == 'A' && encryptedKey[1] == 'P' && encryptedKey[2] == 'P' && encryptedKey[3] == 'B' {
 					encryptedKey = encryptedKey[4:]
-					// 尝试使用本地机器范围解密
+
 					decryptedKey, err := decryptDPAPIWithFlags(encryptedKey, CRYPTPROTECT_UI_FORBIDDEN|CRYPTPROTECT_LOCAL_MACHINE)
 					if err == nil {
 						return decryptedKey, nil
@@ -148,17 +134,16 @@ func DecryptWithSystemDPAPI(stateFilePath string) ([]byte, error) {
 		}
 	}
 
-	// 如果app_bound_encrypted_key失败，尝试encrypted_key
 	for _, pattern := range patterns {
 		re := regexp.MustCompile(pattern)
 		matches := re.FindStringSubmatch(string(stateData))
 		if len(matches) > 1 {
 			encryptedKey, err := base64.StdEncoding.DecodeString(matches[1])
 			if err == nil && len(encryptedKey) > 5 {
-				// 去除前缀 "DPAPI"
+
 				if encryptedKey[0] == 'D' && encryptedKey[1] == 'P' && encryptedKey[2] == 'A' && encryptedKey[3] == 'P' && encryptedKey[4] == 'I' {
 					encryptedKey = encryptedKey[5:]
-					// 尝试解密
+
 					decryptedKey, err := decryptDPAPI(encryptedKey)
 					if err == nil {
 						return decryptedKey, nil
@@ -171,7 +156,6 @@ func DecryptWithSystemDPAPI(stateFilePath string) ([]byte, error) {
 	return nil, errors.New("无法从状态文件中获取加密密钥")
 }
 
-// DecryptWithUserDPAPI 使用用户DPAPI解密数据
 func DecryptWithUserDPAPI(systemKey []byte, stateFilePath string) ([]byte, error) {
 	if systemKey == nil {
 		var err error
@@ -181,33 +165,28 @@ func DecryptWithUserDPAPI(systemKey []byte, stateFilePath string) ([]byte, error
 		}
 	}
 
-	// 尝试使用当前用户范围解密
 	decryptedKey, err := decryptDPAPI(systemKey)
 	if err != nil {
 		return nil, err
 	}
 
-	// 根据浏览器类型选择不同的处理方式
 	if strings.Contains(stateFilePath, "Google") || strings.Contains(stateFilePath, "Chrome") {
-		// Chrome特定处理
+
 		if len(decryptedKey) >= 61 {
 			key := decryptedKey[len(decryptedKey)-61:]
 
-			// 检查是否为v20格式
 			if len(key) > 1 && key[0] == 1 {
-				// 提取IV和加密数据
+
 				iv := key[1:13]
 				ciphertext := key[13:45]
 				tag := key[45:61]
 
-				// 使用硬编码的AES密钥
 				aesKeyBase64 := "sxxuJBrIRnKNqcH6xJNmUc/7lE0UOrgWJ2vMbaAoR4c="
 				aesKey, err := base64.StdEncoding.DecodeString(aesKeyBase64)
 				if err != nil {
 					return nil, err
 				}
 
-				// 使用AES-GCM解密
 				aesGcm := &AesGcm{}
 				decryptedData, err := aesGcm.Decrypt(aesKey, iv, nil, ciphertext, tag)
 				if err != nil {
@@ -219,7 +198,6 @@ func DecryptWithUserDPAPI(systemKey []byte, stateFilePath string) ([]byte, error
 		}
 	}
 
-	// 对于其他浏览器或者Chrome的旧版本，直接返回最后32字节作为密钥
 	if len(decryptedKey) >= 32 {
 		key := make([]byte, 32)
 		copy(key, decryptedKey[len(decryptedKey)-32:])
@@ -229,7 +207,6 @@ func DecryptWithUserDPAPI(systemKey []byte, stateFilePath string) ([]byte, error
 	return decryptedKey, nil
 }
 
-// DecryptData 解密Chrome加密数据
 func DecryptData(encryptedData []byte, masterKey []byte) (string, error) {
 	if masterKey == nil {
 		return "", errors.New("master key is nil")
@@ -241,12 +218,10 @@ func DecryptData(encryptedData []byte, masterKey []byte) (string, error) {
 
 	bufferString := string(encryptedData)
 
-	// 处理v10/v11/v20格式
 	if strings.HasPrefix(bufferString, "v10") || strings.HasPrefix(bufferString, "v11") {
 		iv := encryptedData[3:15]
 		cipherText := encryptedData[15:]
 
-		// 对于v10，没有单独的tag
 		var tag []byte
 		var data []byte
 
@@ -258,7 +233,7 @@ func DecryptData(encryptedData []byte, masterKey []byte) (string, error) {
 			data = cipherText
 			tag = nil
 		} else {
-			// v11格式，最后16字节是tag
+
 			tag = cipherText[len(cipherText)-16:]
 			data = cipherText[:len(cipherText)-16]
 		}
@@ -271,7 +246,7 @@ func DecryptData(encryptedData []byte, masterKey []byte) (string, error) {
 
 		return string(decryptedData), nil
 	} else if strings.HasPrefix(bufferString, "v20") {
-		// 处理v20格式
+
 		iv := encryptedData[3:15]
 		cipherText := encryptedData[15:]
 
@@ -288,14 +263,13 @@ func DecryptData(encryptedData []byte, masterKey []byte) (string, error) {
 			return "", err
 		}
 
-		// v20格式，前32字节是填充
 		if len(decryptedData) <= 32 {
 			return "", errors.New("decrypted data too short")
 		}
 
 		return string(decryptedData[32:]), nil
 	} else {
-		// 尝试使用DPAPI直接解密
+
 		decryptedData, err := decryptDPAPI(encryptedData)
 		if err != nil {
 			return "", err
@@ -305,12 +279,10 @@ func DecryptData(encryptedData []byte, masterKey []byte) (string, error) {
 	}
 }
 
-// decryptDPAPI 使用Windows DPAPI解密数据
 func decryptDPAPI(encryptedData []byte) ([]byte, error) {
 	return decryptDPAPIWithFlags(encryptedData, 0)
 }
 
-// decryptDPAPIWithFlags 使用指定标志的Windows DPAPI解密数据
 func decryptDPAPIWithFlags(encryptedData []byte, flags uint32) ([]byte, error) {
 	var outBlob dataBlob
 	var inBlob dataBlob
@@ -320,10 +292,8 @@ func decryptDPAPIWithFlags(encryptedData []byte, flags uint32) ([]byte, error) {
 		return nil, errors.New("empty encrypted data")
 	}
 
-	// 分配内存并复制加密数据
 	inBlob.pbData = uintptr(unsafe.Pointer(&encryptedData[0]))
 
-	// 调用Windows API解密数据
 	procDecryptData.Call(
 		uintptr(unsafe.Pointer(&inBlob)),
 		0,
@@ -338,23 +308,19 @@ func decryptDPAPIWithFlags(encryptedData []byte, flags uint32) ([]byte, error) {
 		return nil, errors.New("decryption failed")
 	}
 
-	// 复制解密后的数据
 	decryptedData := make([]byte, outBlob.cbData)
 	copyMemory(decryptedData, outBlob.pbData, outBlob.cbData)
 
-	// 释放内存
 	localFree.Call(outBlob.pbData)
 
 	return decryptedData, nil
 }
 
-// dataBlob 结构体用于DPAPI函数
 type dataBlob struct {
 	cbData uint32
 	pbData uintptr
 }
 
-// 加载Windows API函数
 var (
 	dllCrypt32  = syscall.NewLazyDLL("Crypt32.dll")
 	dllKernel32 = syscall.NewLazyDLL("Kernel32.dll")
@@ -364,7 +330,6 @@ var (
 	localFree       = dllKernel32.NewProc("LocalFree")
 )
 
-// copyMemory 从源地址复制内存到目标地址
 func copyMemory(dest []byte, src uintptr, length uint32) {
 	for i := uint32(0); i < length; i++ {
 		dest[i] = *(*byte)(unsafe.Pointer(src + uintptr(i)))
@@ -378,7 +343,7 @@ func AES128CBCDecrypt(key, iv, ciphertext []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	// Check ciphertext length
+
 	if len(ciphertext) < aes.BlockSize {
 		return nil, errors.New("AES128CBCDecrypt: ciphertext too short")
 	}
@@ -390,7 +355,6 @@ func AES128CBCDecrypt(key, iv, ciphertext []byte) ([]byte, error) {
 	mode := cipher.NewCBCDecrypter(block, iv)
 	mode.CryptBlocks(decryptedData, ciphertext)
 
-	// unpad the decrypted data and handle potential padding errors
 	decryptedData, err = pkcs5UnPadding(decryptedData)
 	if err != nil {
 		return nil, fmt.Errorf("AES128CBCDecrypt: %w", err)
@@ -477,9 +441,7 @@ func PBKDF2Key(password, salt []byte, iter, keyLen int, h func() hash.Hash) []by
 	dk := make([]byte, 0, numBlocks*hashLen)
 	u := make([]byte, hashLen)
 	for block := 1; block <= numBlocks; block++ {
-		// N.B.: || means concatenation, ^ means XOR
-		// for each block T_i = U_1 ^ U_2 ^ ... ^ U_iter
-		// U_1 = PRF(password, salt || uint(i))
+
 		prf.Reset()
 		prf.Write(salt)
 		buf[0] = byte(block >> 24)
@@ -504,13 +466,11 @@ func PBKDF2Key(password, salt []byte, iter, keyLen int, h func() hash.Hash) []by
 	return dk[:keyLen]
 }
 
-// ASN1PBE 接口定义了 ASN1 PBE 加密/解密操作
 type ASN1PBE interface {
 	Decrypt(globalSalt []byte) ([]byte, error)
 	Encrypt(globalSalt, plaintext []byte) ([]byte, error)
 }
 
-// NewASN1PBE 创建一个新的 ASN1PBE 实例
 func NewASN1PBE(b []byte) (pbe ASN1PBE, err error) {
 	var (
 		nss   nssPBE
@@ -529,18 +489,15 @@ func NewASN1PBE(b []byte) (pbe ASN1PBE, err error) {
 	return nil, ErrDecodeASN1Failed
 }
 
-// ErrDecodeASN1Failed 表示 ASN1 解码失败
 var ErrDecodeASN1Failed = errors.New("decode ASN1 data failed")
 
-// nssPBE 结构体
-// SEQUENCE (2 elem)
 //
 //	OBJECT IDENTIFIER
 //	SEQUENCE (2 elem)
 //	  OCTET STRING (20 byte)
 //	  INTEGER 1
 //
-// OCTET STRING (16 byte)
+
 type nssPBE struct {
 	AlgoAttr struct {
 		asn1.ObjectIdentifier
@@ -552,19 +509,16 @@ type nssPBE struct {
 	Encrypted []byte
 }
 
-// Decrypt 使用全局盐解密加密的密码
 func (n nssPBE) Decrypt(globalSalt []byte) ([]byte, error) {
 	key, iv := n.deriveKeyAndIV(globalSalt)
 	return DES3Decrypt(key, iv, n.Encrypted)
 }
 
-// Encrypt 使用全局盐加密明文
 func (n nssPBE) Encrypt(globalSalt, plaintext []byte) ([]byte, error) {
 	key, iv := n.deriveKeyAndIV(globalSalt)
 	return DES3Encrypt(key, iv, plaintext)
 }
 
-// deriveKeyAndIV 从全局盐和条目盐派生密钥和初始化向量(IV)
 func (n nssPBE) deriveKeyAndIV(globalSalt []byte) ([]byte, []byte) {
 	salt := n.AlgoAttr.SaltAttr.EntrySalt
 	hashPrefix := sha1.Sum(globalSalt)
@@ -587,7 +541,6 @@ func (n nssPBE) deriveKeyAndIV(globalSalt []byte) ([]byte, []byte) {
 	return key[:24], iv
 }
 
-// paddingZero 用零填充字节切片到指定长度
 func paddingZero(src []byte, length int) []byte {
 	if len(src) >= length {
 		return src
@@ -597,8 +550,6 @@ func paddingZero(src []byte, length int) []byte {
 	return dst
 }
 
-// metaPBE 结构体
-// SEQUENCE (2 elem)
 //
 //	OBJECT IDENTIFIER
 //	SEQUENCE (2 elem)
@@ -614,7 +565,7 @@ func paddingZero(src []byte, length int) []byte {
 //	  OBJECT IDENTIFIER
 //	  OCTET STRING (14 byte)
 //
-// OCTET STRING (16 byte)
+
 type metaPBE struct {
 	AlgoAttr  algoAttr
 	Encrypted []byte
@@ -645,19 +596,16 @@ type slatAttr struct {
 	}
 }
 
-// Decrypt 解密 metaPBE 数据
 func (m metaPBE) Decrypt(globalSalt []byte) ([]byte, error) {
 	key, iv := m.deriveKeyAndIV(globalSalt)
 	return AES128CBCDecrypt(key, iv, m.Encrypted)
 }
 
-// Encrypt 加密 metaPBE 数据
 func (m metaPBE) Encrypt(globalSalt, plaintext []byte) ([]byte, error) {
 	key, iv := m.deriveKeyAndIV(globalSalt)
 	return AES128CBCEncrypt(key, iv, plaintext)
 }
 
-// deriveKeyAndIV 派生密钥和IV
 func (m metaPBE) deriveKeyAndIV(globalSalt []byte) ([]byte, []byte) {
 	password := sha1.Sum(globalSalt)
 
@@ -670,14 +618,11 @@ func (m metaPBE) deriveKeyAndIV(globalSalt []byte) ([]byte, []byte) {
 	return key, iv
 }
 
-// loginPBE 结构体
-// OCTET STRING (16 byte)
-// SEQUENCE (2 elem)
 //
 //	OBJECT IDENTIFIER
 //	OCTET STRING (8 byte)
 //
-// OCTET STRING (16 byte)
+
 type loginPBE struct {
 	CipherText []byte
 	Data       struct {
@@ -687,19 +632,16 @@ type loginPBE struct {
 	Encrypted []byte
 }
 
-// Decrypt 解密 loginPBE 数据
 func (l loginPBE) Decrypt(globalSalt []byte) ([]byte, error) {
 	key, iv := l.deriveKeyAndIV(globalSalt)
 	return DES3Decrypt(key, iv, l.Encrypted)
 }
 
-// Encrypt 加密 loginPBE 数据
 func (l loginPBE) Encrypt(globalSalt, plaintext []byte) ([]byte, error) {
 	key, iv := l.deriveKeyAndIV(globalSalt)
 	return DES3Encrypt(key, iv, plaintext)
 }
 
-// deriveKeyAndIV 派生密钥和IV
 func (l loginPBE) deriveKeyAndIV(globalSalt []byte) ([]byte, []byte) {
 	return globalSalt, l.Data.IV
 }

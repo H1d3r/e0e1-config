@@ -1,6 +1,6 @@
 module e0e1-config
 
-go 1.21.5
+go 1.20
 
 replace golang.org/x/sys => golang.org/x/sys v0.15.0
 
@@ -8,7 +8,6 @@ require golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
 
 require (
 	github.com/glebarez/sqlite v1.11.0
-	github.com/mattn/go-sqlite3 v1.14.16
 	golang.org/x/sys v0.25.0
 	golang.org/x/text v0.13.0
 )

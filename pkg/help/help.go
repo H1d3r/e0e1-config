@@ -9,7 +9,7 @@ func ShowHelp() {
   / _ \ | | |/ _ \ |_____ / __/ _ \| '_ \| |_| |/ _  |
  |  __/ |_| |  __/ |_____| (_| (_) | | | |  _| | (_| |
   \___|\___/ \___|_|      \___\___/|_| |_|_| |_|\__, |
-		e0e1-config - 配置扫描利用工具 - version: 1.20
+		e0e1-config - 配置扫描利用工具 - version: 1.30
      github: https://github.com/eeeeeeeeee-code/e0e1-config
 
 用法:
@@ -45,7 +45,7 @@ func ShowHelp() {
 		-winscp                 获取WinSCP的连接信息(1.注册表获取 2.寻找默认配置文件)
 		-winscp-path string     自定义指定WinSCP的配置文件路径
 	浏览器:
-		-bromium				指定要扫描的浏览器内核类型 (all, chromium, firefox)
+		-bromium				指定要扫描的浏览器内核类型 (all, chromium, firefox,ie)
 		-browser-name			QQ等，需要联结browser-path参数
 		-browser-path			指定浏览器数据路径，需要联结browser-name参数
 		-browser-format			指定输出格式 (csv 或 json)，为空只输出到控制台

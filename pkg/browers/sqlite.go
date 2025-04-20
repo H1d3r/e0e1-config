@@ -6,10 +6,9 @@ import (
 	"fmt"
 	"time"
 
-	_ "github.com/glebarez/sqlite" // 导入 glebarez/sqlite 驱动
+	_ "github.com/glebarez/sqlite"
 )
 
-// SQLiteHandler 是一个使用纯Go实现的SQLite处理器
 type SQLiteHandler struct {
 	db         *sql.DB
 	tableName  string
@@ -17,15 +16,13 @@ type SQLiteHandler struct {
 	rows       []map[string]string
 }
 
-// NewSQLiteHandler 创建一个新的SQLite处理器
 func NewSQLiteHandler(filePath string) (*SQLiteHandler, error) {
-	// 打开SQLite数据库
+
 	db, err := sql.Open("sqlite", filePath)
 	if err != nil {
 		return nil, fmt.Errorf("打开SQLite数据库失败: %v", err)
 	}
 
-	// 测试连接
 	if err := db.Ping(); err != nil {
 		db.Close()
 		return nil, fmt.Errorf("连接SQLite数据库失败: %v", err)
@@ -37,14 +34,12 @@ func NewSQLiteHandler(filePath string) (*SQLiteHandler, error) {
 	}, nil
 }
 
-// Close 关闭数据库连接
 func (h *SQLiteHandler) Close() {
 	if h.db != nil {
 		h.db.Close()
 	}
 }
 
-// GetTableNames 获取数据库中所有表名
 func (h *SQLiteHandler) GetTableNames() []string {
 	var tables []string
 
@@ -67,12 +62,10 @@ func (h *SQLiteHandler) GetTableNames() []string {
 	return tables
 }
 
-// ReadTable 读取指定表
 func (h *SQLiteHandler) ReadTable(tableName string) bool {
 	h.tableName = tableName
 	h.rows = []map[string]string{}
 
-	// 首先检查表是否存在
 	var tableExists int
 	checkTableQuery := `SELECT count(*) FROM sqlite_master WHERE type='table' AND name=?`
 	err := h.db.QueryRow(checkTableQuery, tableName).Scan(&tableExists)
@@ -86,7 +79,6 @@ func (h *SQLiteHandler) ReadTable(tableName string) bool {
 		return false
 	}
 
-	// 获取表结构
 	pragmaQuery := fmt.Sprintf("PRAGMA table_info(%s)", tableName)
 	pragmaRows, err := h.db.Query(pragmaQuery)
 	if err != nil {
@@ -95,7 +87,6 @@ func (h *SQLiteHandler) ReadTable(tableName string) bool {
 	}
 	defer pragmaRows.Close()
 
-	// 读取字段名
 	h.fieldNames = []string{}
 	for pragmaRows.Next() {
 		var cid int
@@ -116,8 +107,7 @@ func (h *SQLiteHandler) ReadTable(tableName string) bool {
 
 	//fmt.Printf("表 %s 有 %d 个字段\n", tableName, len(h.fieldNames))
 
-	// 读取表数据
-	dataQuery := fmt.Sprintf("SELECT * FROM %s LIMIT %s", tableName, browerlimit) // 限制行数以避免内存问题
+	dataQuery := fmt.Sprintf("SELECT * FROM %s LIMIT %s", tableName, browerlimit)
 	dataRows, err := h.db.Query(dataQuery)
 	if err != nil {
 		fmt.Printf("查询表 %s 数据时出错: %v\n", tableName, err)
@@ -125,21 +115,18 @@ func (h *SQLiteHandler) ReadTable(tableName string) bool {
 	}
 	defer dataRows.Close()
 
-	// 获取列信息
 	columns, err := dataRows.Columns()
 	if err != nil {
 		fmt.Printf("获取列信息时出错: %v\n", err)
 		return false
 	}
 
-	// 准备扫描目标
 	values := make([]interface{}, len(columns))
 	valuePtrs := make([]interface{}, len(columns))
 	for i := range columns {
 		valuePtrs[i] = &values[i]
 	}
 
-	// 读取数据
 	rowCount := 0
 	for dataRows.Next() {
 		if err := dataRows.Scan(valuePtrs...); err != nil {
@@ -147,23 +134,21 @@ func (h *SQLiteHandler) ReadTable(tableName string) bool {
 			continue
 		}
 
-		// 将数据转换为字符串映射
 		rowData := make(map[string]string)
 		for i, col := range columns {
 			var v interface{} = values[i]
 
-			// 处理不同类型的数据
 			switch vt := v.(type) {
 			case []byte:
-				// 对于二进制数据，使用base64编码
+
 				rowData[col] = base64.StdEncoding.EncodeToString(vt)
 			case time.Time:
-				// 时间格式化
+
 				rowData[col] = vt.Format(time.RFC3339)
 			case nil:
 				rowData[col] = ""
 			default:
-				// 其他类型转为字符串
+
 				rowData[col] = fmt.Sprintf("%v", v)
 			}
 		}
@@ -177,12 +162,10 @@ func (h *SQLiteHandler) ReadTable(tableName string) bool {
 	return len(h.rows) > 0
 }
 
-// GetRowCount 获取行数
 func (h *SQLiteHandler) GetRowCount() int {
 	return len(h.rows)
 }
 
-// GetValue 获取指定行列的值
 func (h *SQLiteHandler) GetValue(rowIndex int, columnName string) string {
 	if rowIndex < 0 || rowIndex >= len(h.rows) {
 		return ""
@@ -191,7 +174,6 @@ func (h *SQLiteHandler) GetValue(rowIndex int, columnName string) string {
 	return h.rows[rowIndex][columnName]
 }
 
-// FormatTime 格式化时间为字符串
 func FormatTime(chromeTime int64) string {
 	t := TimeEpoch(chromeTime)
 	if t.IsZero() {
