@@ -55,8 +55,7 @@
 > 
 
 ## 微步沙盒分析
-因为添加了浏览器方面的东西，所以会有一些敏感的东西，会有一点检出，不过效果还好。
-![image](https://github.com/user-attachments/assets/a4bd2ec1-f436-4236-ab04-166de63844ec)
+![QQ_1745121503047](https://github.com/user-attachments/assets/a4bd96de-2e75-4d09-a93f-cae5dc71700b)
 
 ## 赞赏码
 开源维护不易，有钱的大哥，可以请我喝一杯咖啡努努力ᕙ(• ॒ ູ•)ᕘ
