@@ -160,7 +160,7 @@ func getUserDataPath() ([]string, error) {
 	}
 
 	for _, version := range versions {
-		if strings.HasPrefix(version, "5") || strings.HasPrefix(version, "6") || strings.HasPrefix(version, "7") {
+		if len(version) > 0 && unicode.IsDigit(rune(version[0])) {
 			strUserDataRegPath := strRegPath + `\` + version + `\UserData`
 			subKey, err := registry.OpenKey(registry.CURRENT_USER, strUserDataRegPath, registry.QUERY_VALUE)
 			if err != nil {
